@@ -9,6 +9,8 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.6.0'
+        implementation 'org.codehaus.groovy:groovy-xml:3.0.9'
+        implementation 'org.codehaus.groovy:groovy-json:3.0.9'
         
 
         // NOTE: Do not place your application dependencies here; they belong
