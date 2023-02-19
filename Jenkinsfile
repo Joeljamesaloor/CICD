@@ -1,34 +1,32 @@
 pipeline {
     agent any
-
     environment {
-        // Set up your BrowserStack credentials as environment variables
-        BROWSERSTACK_USERNAME = credentials('joeljames_BmDiRh')
-        BROWSERSTACK_ACCESS_KEY = credentials('ixhhRAs83cMXpxzCbLAJ')
+        BROWSER_STACK_USERNAME = 'joeljames_BmDiRh'
+        BROWSER_STACK_ACCESS_KEY = 'ixhhRAs83cMXpxzCbLAJ'
     }
-
     stages {
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                // Clone your Git repository
-                git url: 'https://github.com/Joeljamesaloor/CICD.git'
-
-                // Build your app (replace this with your own build command)
-                sh 'npm install'
-                sh 'npm run build'
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], 
+                userRemoteConfigs: [[url: 'https://github.com/Joeljamesaloor/CICD.git']]])
             }
         }
-
+        stage('Build') {
+            steps {
+                sh './gradlew build'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh './gradlew test'
+            }
+        }
         stage('Deploy to BrowserStack') {
             steps {
-                // Upload your app to BrowserStack
-                withCredentials([usernamePassword(credentialsId: 'browserstack-auth', usernameVariable: 'BROWSERSTACK_USERNAME', passwordVariable: 'BROWSERSTACK_ACCESS_KEY')]) {
-                    sh 'curl -u $BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY -X POST "https://api-cloud.browserstack.com/app-automate/upload" -F "file=@path/to/your/app"'
-                }
-
-                // Start a BrowserStack test session (replace this with your own test command)
-                withCredentials([usernamePassword(credentialsId: 'browserstack-auth', usernameVariable: 'BROWSERSTACK_USERNAME', passwordVariable: 'BROWSERSTACK_ACCESS_KEY')]) {
-                    sh 'curl -u $BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY -X POST "https://api-cloud.browserstack.com/app-automate/build" -d \'{"app": "bs://<app-id>","devices": ["Samsung Galaxy S8-7.0"],"name": "Jenkins Build"}\' -H "Content-Type: application/json"'
+                withCredentials([usernamePassword(credentialsId: 'browserstack-credentials', 
+                usernameVariable: 'BROWSER_STACK_USERNAME', passwordVariable: 'BROWSER_STACK_ACCESS_KEY')]) {
+                    sh 'npm install -g browserstack-cypress-cli'
+                    sh 'browserstack-cypress run --sync --key $BROWSER_STACK_ACCESS_KEY --username $BROWSER_STACK_USERNAME'
                 }
             }
         }
